@@ -89,23 +89,16 @@ public class HoneyRJDashboard extends JFrame {
 
     private void showGeoIpMap() {
         Set<String> allIps = new HashSet<>();
-
-        // استخراج IPs من عمود البروتوكولات في الجدول
         for (int i = 0; i < sessionTable.getRowCount(); i++) {
-            Object protoObj = sessionTable.getValueAt(i, 5); // عمود البروتوكولات
-            if (protoObj instanceof String) {
-                String protoData = (String) protoObj;
-                if (protoData.contains(".")) {
-                    for (String token : protoData.split(",")) {
-                        String trimmed = token.trim();
-                        if (trimmed.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
-                            allIps.add(trimmed);
-                        }
-                    }
+            Object ipObj = sessionTable.getValueAt(i, 6); // عمود IP قد يكون في العمود 6 أو غيره حسب الترتيب
+            if (ipObj != null) {
+                String ip = ipObj.toString().trim();
+                if (!ip.equalsIgnoreCase("N/A") && !ip.isEmpty() && !ip.equals("0")) {
+                    allIps.add(ip);
                 }
             }
-
         }
+
 
         if (allIps.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Aucune adresse IP détectée dans les sessions.", "Info", JOptionPane.INFORMATION_MESSAGE);
@@ -153,7 +146,7 @@ public class HoneyRJDashboard extends JFrame {
             reportArea.setText(summary.toString());
 
             DefaultTableModel model = new DefaultTableModel(
-                    new String[]{"Session", "Date", "Fichiers", "Lignes", "Suspectes", "Protocoles"}, 0);
+                    new String[]{"Session", "Date", "Fichiers", "Lignes", "Suspectes", "Protocoles", "IP"}, 0);
 
             for (SessionStats stat : sessions) {
                 model.addRow(new Object[]{
@@ -162,9 +155,11 @@ public class HoneyRJDashboard extends JFrame {
                         stat.numFiles,
                         stat.totalLines,
                         stat.suspiciousLines,
-                        String.join(", ", stat.protocolsUsed)
+                        String.join(", ", stat.protocolsUsed),
+                        stat.ipAddress
                 });
             }
+
             sessionTable.setModel(model);
 
         } catch (IOException ex) {

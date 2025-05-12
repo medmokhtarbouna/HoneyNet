@@ -1,5 +1,9 @@
 package edu.wustl.honeyrj.gui;
 
+import java.util.Map;
+import java.util.HashMap;
+
+
 import edu.wustl.honeyrj.honeyrj.*;
 import edu.wustl.honeyrj.lowinteraction.*;
 import edu.wustl.honeyrj.analysis.LogFileAnalyzer;
@@ -164,8 +168,31 @@ public class HoneyRJGUI extends JFrame implements ActionListener {
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File selectedDir = chooser.getSelectedFile();
 					try {
-						String summary = LogFileAnalyzer.analyze(selectedDir.getAbsolutePath());
-						JOptionPane.showMessageDialog(this, summary, "Résultat de l’analyse", JOptionPane.INFORMATION_MESSAGE);
+						Map<String, Integer> protoMap = new HashMap<>();
+						Map<String, Integer> ipMap = new HashMap<>();
+						Map<String, Integer> kwMap = new HashMap<>();
+
+						LogFileAnalyzer.analyzeAllSessions(selectedDir, protoMap, ipMap, kwMap);
+
+						StringBuilder summary = new StringBuilder();
+						summary.append("📊 Analyse du dossier sélectionné\n\n");
+
+						summary.append("🔐 Protocoles détectés:\n");
+						for (Map.Entry<String, Integer> entry : protoMap.entrySet()) {
+							summary.append("  ").append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
+						}
+
+						summary.append("\n🌐 Adresses IP trouvées:\n");
+						for (Map.Entry<String, Integer> entry : ipMap.entrySet()) {
+							summary.append("  ").append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
+						}
+
+						summary.append("\n🧠 Mots-clés sensibles:\n");
+						for (Map.Entry<String, Integer> entry : kwMap.entrySet()) {
+							summary.append("  ").append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
+						}
+
+						JOptionPane.showMessageDialog(this, summary.toString(), "Résultat de l’analyse", JOptionPane.INFORMATION_MESSAGE);
 					} catch (IOException ex) {
 						JOptionPane.showMessageDialog(this, "Échec de l’analyse : " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
 					}
@@ -175,8 +202,31 @@ public class HoneyRJGUI extends JFrame implements ActionListener {
 			case "analyze_all":
 				File baseDir = new File(System.getProperty("user.home") + File.separator + "HoneyRJLogs");
 				try {
-					String summary = LogFileAnalyzer.analyzeAll(baseDir);
-					JOptionPane.showMessageDialog(this, summary, "Analyse complète", JOptionPane.INFORMATION_MESSAGE);
+					Map<String, Integer> protoMap = new HashMap<>();
+					Map<String, Integer> ipMap = new HashMap<>();
+					Map<String, Integer> kwMap = new HashMap<>();
+
+					LogFileAnalyzer.analyzeAllSessions(baseDir, protoMap, ipMap, kwMap);
+
+					StringBuilder summary = new StringBuilder();
+					summary.append("📊 Analyse complète\n\n");
+
+					summary.append("🔐 Protocoles détectés:\n");
+					for (Map.Entry<String, Integer> entry : protoMap.entrySet()) {
+						summary.append("  ").append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
+					}
+
+					summary.append("\n🌐 Adresses IP trouvées:\n");
+					for (Map.Entry<String, Integer> entry : ipMap.entrySet()) {
+						summary.append("  ").append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
+					}
+
+					summary.append("\n🧠 Mots-clés sensibles:\n");
+					for (Map.Entry<String, Integer> entry : kwMap.entrySet()) {
+						summary.append("  ").append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
+					}
+
+					JOptionPane.showMessageDialog(this, summary.toString(), "Analyse complète", JOptionPane.INFORMATION_MESSAGE);
 				} catch (IOException ex) {
 					JOptionPane.showMessageDialog(this, "Échec de l’analyse complète : " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
 				}
@@ -187,4 +237,5 @@ public class HoneyRJGUI extends JFrame implements ActionListener {
 				break;
 		}
 	}
+
 }

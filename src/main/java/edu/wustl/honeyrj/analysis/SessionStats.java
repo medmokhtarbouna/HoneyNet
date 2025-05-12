@@ -1,22 +1,28 @@
+// ✅ الخطوة 1: تحديث كلاس SessionStats لإضافة حقل IP
 package edu.wustl.honeyrj.analysis;
 
 import java.util.Date;
-import java.util.List;
+import java.util.Set;
 
 public class SessionStats {
     public String name;
+    public Date timestamp;
     public int numFiles;
     public int totalLines;
     public int suspiciousLines;
-    public List<String> protocolsUsed;
-    public Date timestamp;
+    public Set<String> protocolsUsed;
 
-    public SessionStats(String name, int numFiles, int totalLines, int suspiciousLines, List<String> protocolsUsed) {
+    // 🆕 حقل جديد لعناوين IP
+    public String ipAddress;
+
+    public SessionStats(String name, Date timestamp, int numFiles, int totalLines,
+                        int suspiciousLines, Set<String> protocolsUsed, String ipAddress) {
         this.name = name;
+        this.timestamp = timestamp;
         this.numFiles = numFiles;
         this.totalLines = totalLines;
         this.suspiciousLines = suspiciousLines;
         this.protocolsUsed = protocolsUsed;
-        this.timestamp = new Date();
+        this.ipAddress = ipAddress;
     }
 }
