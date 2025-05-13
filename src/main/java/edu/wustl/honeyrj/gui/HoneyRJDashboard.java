@@ -3,6 +3,8 @@ import java.util.stream.Collectors;
 
 import edu.wustl.honeyrj.analysis.LogFileAnalyzer;
 import edu.wustl.honeyrj.analysis.SessionStats;
+import edu.wustl.honeyrj.analysis.CredentialAttempt;
+import edu.wustl.honeyrj.analysis.CredentialStore;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import com.itextpdf.text.*;
@@ -59,6 +61,16 @@ public class HoneyRJDashboard extends JFrame {
         topPanel.add(analyzeBtn);
         topPanel.add(exportPdfBtn);
         topPanel.add(exportCsvBtn);
+
+        JButton exportCredsCsvBtn = new JButton("⬇️ Exporter Credentials CSV");
+        JButton exportCredsPdfBtn = new JButton("⬇️ Exporter Credentials PDF");
+
+        exportCredsCsvBtn.addActionListener(e -> exportCredentialsToCSV());
+        exportCredsPdfBtn.addActionListener(e -> exportCredentialsToPDF());
+
+        topPanel.add(exportCredsCsvBtn);
+        topPanel.add(exportCredsPdfBtn);
+
 
         add(topPanel, BorderLayout.NORTH);
         add(scrollReport, BorderLayout.SOUTH);
@@ -252,6 +264,95 @@ public class HoneyRJDashboard extends JFrame {
             JOptionPane.showMessageDialog(this, "Impossible d’ouvrir le dossier : " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    private void exportCredentialsToCSV() {
+        List<CredentialAttempt> creds = CredentialStore.getCredentials();
+        if (creds == null || creds.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Aucune donnée de connexion à exporter.", "Info", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        File exportDir = new File(System.getProperty("user.home") + File.separator + "HoneyRJExports");
+        if (!exportDir.exists()) exportDir.mkdirs();
+
+        JFileChooser chooser = new JFileChooser(exportDir);
+        chooser.setDialogTitle("Exporter les identifiants vers CSV");
+        String defaultName = "credentials_" + getTimestamp() + ".csv";
+        chooser.setSelectedFile(new File(exportDir, defaultName));
+
+        int result = chooser.showSaveDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File file = chooser.getSelectedFile();
+            if (!file.getName().toLowerCase().endsWith(".csv")) {
+                file = new File(file.getAbsolutePath() + ".csv");
+            }
+
+            try (BufferedWriter writer = Files.newBufferedWriter(file.toPath());
+                 CSVPrinter printer = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader("IP", "Utilisateur", "Mot de passe", "Protocole", "Horodatage"))) {
+                for (CredentialAttempt ca : creds) {
+                    printer.printRecord(ca.ip, ca.username, ca.password, ca.protocol, ca.timestamp);
+                }
+                JOptionPane.showMessageDialog(this, "Export des identifiants CSV terminé.", "Succès", JOptionPane.INFORMATION_MESSAGE);
+                openExportFolder(exportDir);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Erreur lors de l'export CSV : " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void exportCredentialsToPDF() {
+        List<CredentialAttempt> creds = CredentialStore.getCredentials();
+        if (creds == null || creds.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Aucune donnée de connexion à exporter.", "Info", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        File exportDir = new File(System.getProperty("user.home") + File.separator + "HoneyRJExports");
+        if (!exportDir.exists()) exportDir.mkdirs();
+
+        JFileChooser chooser = new JFileChooser(exportDir);
+        chooser.setDialogTitle("Exporter les identifiants vers PDF");
+        String defaultName = "credentials_" + getTimestamp() + ".pdf";
+        chooser.setSelectedFile(new File(exportDir, defaultName));
+
+        int result = chooser.showSaveDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File file = chooser.getSelectedFile();
+            if (!file.getName().toLowerCase().endsWith(".pdf")) {
+                file = new File(file.getAbsolutePath() + ".pdf");
+            }
+
+            Document document = new Document();
+            try {
+                PdfWriter.getInstance(document, new FileOutputStream(file));
+                document.open();
+
+                PdfPTable table = new PdfPTable(5);
+                table.addCell("IP");
+                table.addCell("Utilisateur");
+                table.addCell("Mot de passe");
+                table.addCell("Protocole");
+                table.addCell("Horodatage");
+
+                for (CredentialAttempt ca : creds) {
+                    table.addCell(ca.ip);
+                    table.addCell(ca.username);
+                    table.addCell(ca.password);
+                    table.addCell(ca.protocol);
+                    table.addCell(ca.timestamp.toString());
+                }
+
+                document.add(table);
+                document.close();
+                JOptionPane.showMessageDialog(this, "Export des identifiants PDF terminé.", "Succès", JOptionPane.INFORMATION_MESSAGE);
+                openExportFolder(exportDir);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Erreur lors de l'export PDF : " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+
 
 
 }

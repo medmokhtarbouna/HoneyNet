@@ -1,8 +1,6 @@
-// ✅ LogFileAnalyzer المعدل لإضافة عنوان IP الحقيقي المستخرج من نهاية الجلسة
 package edu.wustl.honeyrj.analysis;
 
 import java.io.*;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,16 +13,15 @@ public class LogFileAnalyzer {
                                                         Map<String, Integer> keywordMap) throws IOException {
 
         List<SessionStats> sessions = new ArrayList<>();
+        String lastSeenIp = "UNKNOWN";
+
         File[] sessionDirs;
         if (baseDir.isDirectory() && baseDir.getName().startsWith("rj_")) {
-            // مجلد جلسة مفرد
-            sessionDirs = new File[]{baseDir};
+            sessionDirs = new File[]{baseDir}; // مجلد جلسة مفرد
         } else {
-            // مجلد يحتوي على مجلدات جلسات
-            sessionDirs = baseDir.listFiles(File::isDirectory);
+            sessionDirs = baseDir.listFiles(File::isDirectory); // مجلد يحتوي على جلسات
             if (sessionDirs == null) return sessions;
         }
-
 
         for (File session : sessionDirs) {
             int totalLines = 0;
@@ -43,30 +40,43 @@ public class LogFileAnalyzer {
                     while ((line = reader.readLine()) != null) {
                         totalLines++;
 
-                        // استخراج البروتوكول
+                        // استخراج محاولات الدخول
+                        if (line.toLowerCase().contains("login:") || line.toLowerCase().contains("username")) {
+                            String username = extractValue(line);
+                            CredentialStore.add(lastSeenIp, username, "", detectProtocol(line), new Date());
+                        }
+
+                        if (line.toLowerCase().contains("password:") || line.toLowerCase().contains("mot de passe")) {
+                            String password = extractValue(line);
+                            List<CredentialAttempt> all = CredentialStore.getCredentials();
+                            if (!all.isEmpty()) {
+                                CredentialAttempt last = all.get(all.size() - 1);
+                                if (last.password == null || last.password.isEmpty()) {
+                                    last.password = password;
+                                }
+                            }
+                        }
+
+                        // استخراج البروتوكولات
                         if (line.contains("FTP")) protocols.add("FTP");
                         if (line.contains("SSH")) protocols.add("SSH");
                         if (line.contains("HTTP")) protocols.add("HTTP");
                         if (line.contains("IRC")) protocols.add("IRC");
 
-                        // استخراج IP الحقيقي من نهاية الجلسة
+                        // استخراج عنوان IP
                         if (line.contains("finished talking to")) {
                             Matcher matcher = Pattern.compile("talking to /([\\d\\.]+)").matcher(line);
                             if (matcher.find()) {
                                 String extractedIp = matcher.group(1);
-
-                                // ✅ إذا كان IP غير صالح أو يساوي 0 نضع IP الرباط
-                                if (extractedIp.equals("0.0.0.0") || extractedIp.equals("0") || extractedIp.isEmpty()) {
-                                    extractedIp = "41.141.252.55"; // ← IP حقيقي من الرباط
+                                if (extractedIp != null && !extractedIp.isEmpty() && !extractedIp.equals("0") && !extractedIp.equals("0.0.0.0")) {
+                                    lastSeenIp = extractedIp;
                                 }
-
-                                ips.add(extractedIp);
-                                ipMap.put(extractedIp, ipMap.getOrDefault(extractedIp, 0) + 1);
+                                ips.add(lastSeenIp);
+                                ipMap.put(lastSeenIp, ipMap.getOrDefault(lastSeenIp, 0) + 1);
                             }
                         }
 
-
-                        // استخراج كلمات دالة
+                        // الكلمات الدالة
                         if (line.toLowerCase().contains("password")) keywordMap.merge("password", 1, Integer::sum);
                         if (line.toLowerCase().contains("access denied")) keywordMap.merge("access denied", 1, Integer::sum);
                         if (line.toLowerCase().contains("login")) keywordMap.merge("login", 1, Integer::sum);
@@ -78,7 +88,7 @@ public class LogFileAnalyzer {
                 }
             }
 
-            // اختيار أول IP كممثل للجلسة (إن وجد)
+            // IP ممثل للجلسة
             String ipAddress = ips.stream().findFirst().orElse("N/A");
 
             SessionStats stat = new SessionStats(
@@ -92,12 +102,24 @@ public class LogFileAnalyzer {
             );
             sessions.add(stat);
 
-            // إحصائيات البروتوكول
+            // تحديث البروتوكولات
             for (String proto : protocols) {
                 protoMap.merge(proto, 1, Integer::sum);
             }
         }
 
         return sessions;
+    }
+
+    private static String extractValue(String line) {
+        String[] parts = line.split("[:,]");
+        return parts.length > 1 ? parts[1].trim() : "";
+    }
+
+    private static String detectProtocol(String line) {
+        if (line.toLowerCase().contains("ftp")) return "FTP";
+        if (line.toLowerCase().contains("ssh")) return "SSH";
+        if (line.toLowerCase().contains("http")) return "HTTP";
+        return "UNKNOWN";
     }
 }
