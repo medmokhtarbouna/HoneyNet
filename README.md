@@ -1,4 +1,4 @@
-# SmartHoneyNet - README
+# HoneyNet - README
 
 SmartHoneyNet est un système de Honeypot simple et interactif, conçu pour simuler des services vulnérables (comme SSH, FTP, HTTP, IRC) afin de détecter, enregistrer et analyser les comportements suspects. Il offre une interface graphique complète, une analyse automatique des journaux, et une cartographie géographique des adresses IP attaquantes.
 
