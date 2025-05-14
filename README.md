@@ -1,6 +1,6 @@
 # HoneyNet - README
 
-SmartHoneyNet est un système de Honeypot simple et interactif, conçu pour simuler des services vulnérables (comme SSH, FTP, HTTP, IRC) afin de détecter, enregistrer et analyser les comportements suspects. Il offre une interface graphique complète, une analyse automatique des journaux, et une cartographie géographique des adresses IP attaquantes.
+HoneyNet est un système de Honeypot simple et interactif, conçu pour simuler des services vulnérables (comme SSH, FTP, HTTP, IRC) afin de détecter, enregistrer et analyser les comportements suspects. Il offre une interface graphique complète, une analyse automatique des journaux, et une cartographie géographique des adresses IP attaquantes.
 
 ## Fonctionnalités principales
 - Simulation de services réseau vulnérables
@@ -44,7 +44,7 @@ Le fichier `.jar` généré sera disponible dans `target/HoneyRJ-1.0.jar`.
 Dans le terminal ou PowerShell :
 
 ```bash
-java -jar target/HoneyRJ-1.0.jar
+java -jar target/HoneyNet-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
 
 Cela ouvre l’interface `HoneyRJGUI`.
